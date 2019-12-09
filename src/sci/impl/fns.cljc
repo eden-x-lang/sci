@@ -1,6 +1,7 @@
 (ns sci.impl.fns
   {:no-doc true}
-  (:require [sci.impl.utils :refer [mark-eval-call]]))
+  (:require [sci.impl.utils :refer [mark-eval-call]]
+            [eden-x.impl.semantic-analyzer :as semana]))
 
 (defn parse-fn-args+body
   [interpret ctx
@@ -53,6 +54,7 @@
                 ctx)
         single-arity? (= 1 (count fn-bodies))
         arities (map #(parse-fn-args+body interpret ctx % fn-name macro? single-arity?) fn-bodies)
+        semantic-analysis (semana/analyze f)
         f (vary-meta
            (if single-arity?
              (first arities)
@@ -65,7 +67,8 @@
                                (let [actual-count (if macro? (- arg-count 2)
                                                       arg-count)]
                                  (str "Cannot call " fn-name " with " actual-count " arguments"))))))))
-           #(assoc % :sci/macro macro?))]
+           #(assoc % :sci/macro macro?
+                   :eden-x/semantic-analysis semantic-analysis))]
     (reset! self-ref f)
     f))
 
